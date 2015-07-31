@@ -3,7 +3,8 @@
 - lucene词典的构造原理
 - lucene模糊查询以及正则查询的原理
 - [BooleanQuery倒排表合并策略](./BooleanQuery倒排表合并策略.md)
-- lucene的删除索引的实现
+- lucene删除索引的实现
 - lucene段merge的过程
-- lucene段的缓存方法
-- lucene是怎么实现Field的
+- lucene段的缓存策略
+- lucene怎么实现Field
+- lucene的分词过程
