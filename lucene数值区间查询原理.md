@@ -36,8 +36,51 @@ Lucene中每一个Term后面都是一个文档列表，这就是倒排索引，�
 *Step 3:*假如某个节点其孩子包含了最小值到最大值之间的所有数，那么就说该节点是完全的。从底向上，删掉后缀树中完全节点的孩子节点。<br/>
 *Step 4:*对树中余下的叶子节点构造Query。属于同一个父亲的叶子节点构造RangeQuery，单独的叶子构造TermQuery，将所有Query插入链表，按照Term对链表中Query排序。<br/>
 Lucene的实现比上面的方法高效的多，其并不会构建后缀树。代码如下：<br/>
-<p><code>
-
-</code></p>
+```java
+  private static void splitRange(
+    final Object builder, final int valSize,
+    final int precisionStep, long minBound, long maxBound
+  ) {
+    if (precisionStep < 1)
+      throw new IllegalArgumentException("precisionStep must be >=1");
+    if (minBound > maxBound) return;
+    for (int shift=0; ; shift += precisionStep) {
+      // calculate new bounds for inner precision
+      final long diff = 1L << (shift+precisionStep),
+        mask = ((1L<<precisionStep) - 1L) << shift;
+      final boolean
+        hasLower = (minBound & mask) != 0L,
+        hasUpper = (maxBound & mask) != mask;
+      final long
+        nextMinBound = (hasLower ? (minBound + diff) : minBound) & ~mask,
+        nextMaxBound = (hasUpper ? (maxBound - diff) : maxBound) & ~mask;
+      final boolean
+        lowerWrapped = nextMinBound < minBound,
+        upperWrapped = nextMaxBound > maxBound;
+      
+      if (shift+precisionStep>=valSize || nextMinBound>nextMaxBound || lowerWrapped || upperWrapped) {
+        // We are in the lowest precision or the next precision is not available.
+        addRange(builder, valSize, minBound, maxBound, shift);
+        // exit the split recursion loop
+        break;
+      }
+      
+      if (hasLower)
+        addRange(builder, valSize, minBound, minBound | mask, shift);
+      if (hasUpper)
+        addRange(builder, valSize, maxBound & ~mask, maxBound, shift);
+      
+      // recurse to next precision
+      minBound = nextMinBound;
+      maxBound = nextMaxBound;
+    }
+  }
+```
 Lucene索引中Term是有序的，切分好的Query也是有序的，除此之外，lucene4.x为了加快Term的查询速度，采用FST(有限状态自动机)对Term做前缀标记，FST可以指出以abc为前缀的Term块起始位置，在块内lucene4.x又使用跳跃表进行查询加速，所以lucene seek到指定Term的速度是很快的。需要seek的Term数量仅仅是Query中Distinct的Term数量。最坏情况下查询复杂度就是Query中Distinct Term的数量。<br/>
 迭代N bit数的取值范围，假设偏移是k，对每一个数进行分词，构建后缀树，这样的后缀树称为完全后缀树，最坏情况下的查询区间由最底层的第二个叶子和倒数第二个叶子构成。此时需要Seek的Term数量为：<br/>
+```
+(2^k-1)×2×(N÷k-1)+2^k-2
+```
+- [作者主页](http://www.thetaphi.de/)
+- [lucene邮件组中TrieRangeQuery的commit申请](http://www.gossamer-threads.com/lists/lucene/java-dev/67807)
+- [作者介绍这个算法的ppt](https://www.google.com.hk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0CB8QFjAAahUKEwi07fH7r4THAhXILpQKHc_PCPQ&url=%68%74%74%70%3a%2f%2f%77%77%77%2e%74%68%65%74%61%70%68%69%2e%64%65%2f%73%68%61%72%65%2f%53%63%68%69%6e%64%6c%65%72%2d%54%72%69%65%52%61%6e%67%65%2e%70%70%74&ei=ZOS6VbSrFsjd0ATPn6OgDw&usg=AFQjCNHDWZaW472jl9Pn4epskF52ccuf3w)
