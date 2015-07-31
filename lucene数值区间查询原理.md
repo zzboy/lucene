@@ -81,6 +81,7 @@ Lucene索引中Term是有序的，切分好的Query也是有序的，除此之�
 ```
 (2^k-1)×2×(N÷k-1)+2^k-2
 ```
+## 附录
 - [作者主页](http://www.thetaphi.de/)
 - [lucene邮件组中TrieRangeQuery的commit申请](http://www.gossamer-threads.com/lists/lucene/java-dev/67807)
 - [作者介绍这个算法的ppt](https://www.google.com.hk/url?sa=t&rct=j&q=&esrc=s&source=web&cd=1&cad=rja&uact=8&ved=0CB8QFjAAahUKEwi07fH7r4THAhXILpQKHc_PCPQ&url=%68%74%74%70%3a%2f%2f%77%77%77%2e%74%68%65%74%61%70%68%69%2e%64%65%2f%73%68%61%72%65%2f%53%63%68%69%6e%64%6c%65%72%2d%54%72%69%65%52%61%6e%67%65%2e%70%70%74&ei=ZOS6VbSrFsjd0ATPn6OgDw&usg=AFQjCNHDWZaW472jl9Pn4epskF52ccuf3w)
