@@ -5,6 +5,6 @@
 - [BooleanQuery倒排表合并策略](./BooleanQuery倒排表合并策略.md)
 - lucene删除索引的实现
 - lucene段merge的过程
-- lucene段的缓存策略
+- lucene倒排索引缓冲池的细节
 - lucene怎么实现Field
 - lucene的分词过程
