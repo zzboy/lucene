@@ -1,10 +1,10 @@
 # lucene
+- [lucene倒排索引缓冲池的细节](./lucene倒排索引缓冲池的细节.md)
 - [lucene数值区间查询原理](./lucene数值区间查询原理.md)
 - lucene词典的构造原理
 - lucene模糊查询以及正则查询的原理
 - [BooleanQuery倒排表合并策略](./BooleanQuery倒排表合并策略.md)
 - lucene删除索引的实现
 - lucene段merge的过程
-- [lucene倒排索引缓冲池的细节](./lucene倒排索引缓冲池的细节.md)
 - lucene怎么实现Field
 - lucene的分词过程
