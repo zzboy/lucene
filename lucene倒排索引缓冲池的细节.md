@@ -44,9 +44,9 @@
  
 > &emsp;&emsp;Each slice is filled with 0's initially, and we mark the end with a non-zero byte.  This way the methods that are writing into the slice don't need to record its length and instead allocate a new slice once they hit a non-zero byte.
 
-&emsp;&emsp;具体实现请直接参考源码，实现很简单，类的功能是可以将字节数据写入，但是不要求写入的逻辑上是一个整体的数据在物理上也是连续的，将逻辑上的数据块读出来只需要提供两个指针就好了，一个是逻辑块的物理起始位置，一个是逻辑块的物理结束位置，注意逻辑块的长度可能是小于两个结束位置之差的。ByteBlockPool要解决的问题可以联系实际的场景来体会下，不同Term的倒排信息是缓存在一个ByteBlockPool中的，不同Term的倒排信息在时序上是交叉写入的，Term到达的顺序可能是<term1,term2,term1>，并且每个Term倒排信息的多少是无法事先知道的。
+&emsp;&emsp;具体实现请直接参考源码，实现很简单，类的功能是可以将字节数据写入，但是不要求写入的逻辑上是一个整体的数据在物理上也是连续的，将逻辑上的数据块读出来只需要提供两个指针就好了，一个是逻辑块的物理起始位置，一个是逻辑块的物理结束位置，注意逻辑块的长度可能是小于两个结束位置之差的。ByteBlockPool要解决的问题可以联系实际的场景来体会下，不同Term的倒排信息是缓存在一个ByteBlockPool中的，不同Term的倒排信息在时序上是交叉写入的，Term到达的顺序可能是``term1,term2,term1``，并且每个Term倒排信息的多少是无法事先知道的。
 
-&emsp;&emsp;ByteBlockPool解决的另一类问题是时序上顺序的数据，比如Term，虽然整体上看Term到达的顺序可能是<term1,term2,term1>这样交叉的情况，但是Term数据有的一个特点是只会被写到缓存块中一次。
+&emsp;&emsp;ByteBlockPool解决的另一类问题是时序上顺序的数据，比如Term，虽然整体上看Term到达的顺序可能是``term1,term2,term1``这样交叉的情况，但是Term数据有的一个特点是只会被写到缓存块中一次。
 
 &emsp;&emsp;上面提到的ByteBlockPool解决的两类问题对应两类缓存块，[DocIDList,TermFreq,Position,Offset,Payload]缓存块和Term缓存块，前一个缓存块存放的是除了Term字面量外余下的数据。完整的倒排信息不止这两个缓存块，怎么将两个缓存块联接起来构建成倒排索引，还需要有其他的数据。
 
