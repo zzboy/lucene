@@ -51,7 +51,7 @@
 
 &emsp;&emsp;下面是别人画的一张图，lucene3.0的实现，很老了，但是整体上思路没有变。
 
-![Alt text](./ByteBlockPool.jpg)
+![ByteBlockPool](./pic/ByteBlockPool.jpg)
 
 &emsp;&emsp;左侧是PostingList，每个Term都有一个入口，其中byteStart字段存放的是之前提到的这个Term对应的倒排信息[DocIDList,TermFreq,Position,Offset,Payload]在缓存块中的物理偏移，textStart用于记录该Term在Term缓存块中的偏移，lucene5.2.1中，Term缓存块没有用CharBlockPool，而是用ByteBlockPool。上文提到DocID、TermFreq的写入时机和Position、Offset、Payload是不一样的，因此lucene在实际实现中并没有将[DocIDList,TermFreq,Position,Offset,Payload]当成一个数据块，而是分成了两个数据块[DocIDList,TermFreq]和[Position,Offset,Payload]，这样为了获得这两块数据就需要记录四个偏移地址，但lucene并没有这样做。byteStart记录[DocIDList,TermFreq]的起始偏移地址，[Position,Offset,Payload]的偏移地址可以通过byteStart计算出来，要理解这一点需要理解ByteBlockPool是怎么实现逻辑上连续的数据物理上离散存储的，这一块不打算展开，感兴趣的读者请直接看ByteBloackPool的源码，类似于链表的结构，链表的Node对应这里叫做Slice，Slice的末尾会存放Next Slice的地址。其实之前提到的两个物理偏移就对应头Slice的起始位置和尾Slice的结束位置。数据块[DocIDList,TermFreq]和[Position,Offset,Payload]的头Slice是相邻的，所有头Slice的大小都是相同的，因此[Position,Offset,Payload]的开始位置很容易从byteStart推算出。这样只需要记录三个偏移地址就够了，byteStart、[DocIDList,TermFreq]块的结束位置、[Position,Offset,Payload]块的结束位置。后两个信息lucene将其为维护在一个IntBlockPool中，IntBlockPool和ByteBlockPool的区别仅仅是存储的数据类型不同，PostingList中记录下这两个偏移在IntBlockPool中的偏移。
 
