@@ -56,11 +56,12 @@
 
 &emsp;&emsp;左侧是PostingList，每个Term都有一个入口，其中byteStart字段存放的是之前提到的这个Term对应的倒排信息[DocIDList,TermFreq,Position,Offset,Payload]在缓存块中的物理偏移，textStart用于记录该Term在Term缓存块中的偏移，lucene5.2.1中，Term缓存块没有用CharBlockPool，而是用ByteBlockPool。上文提到DocID、TermFreq的写入时机和Position、Offset、Payload是不一样的，因此lucene在实际实现中并没有将[DocIDList,TermFreq,Position,Offset,Payload]当成一个数据块，而是分成了两个数据块[DocIDList,TermFreq]和[Position,Offset,Payload]，这样为了获得这两块数据就需要记录四个偏移地址，但lucene并没有这样做。byteStart记录[DocIDList,TermFreq]的起始偏移地址，[Position,Offset,Payload]的偏移地址可以通过byteStart计算出来，要理解这一点需要理解ByteBlockPool是怎么实现逻辑上连续的数据物理上离散存储的，这一块不打算展开，感兴趣的读者请直接看ByteBloackPool的源码，类似于链表的结构，链表的Node对应这里叫做Slice，Slice的末尾会存放Next Slice的地址。其实之前提到的两个物理偏移就对应头Slice的起始位置和尾Slice的结束位置。数据块[DocIDList,TermFreq]和[Position,Offset,Payload]的头Slice是相邻的，所有头Slice的大小都是相同的，因此[Position,Offset,Payload]的开始位置很容易从byteStart推算出。这样只需要记录三个偏移地址就够了，byteStart、[DocIDList,TermFreq]块的结束位置、[Position,Offset,Payload]块的结束位置。后两个信息lucene将其为维护在一个IntBlockPool中，IntBlockPool和ByteBlockPool的区别仅仅是存储的数据类型不同，PostingList中记录下这两个偏移在IntBlockPool中的偏移。
 
-&emsp;&emsp;上图中左侧除了上面讨论的外，可以看到还有lastDocID、lastPosition等，这些都是为了做差值编码，从而节约存储。这里还有个问题需要说明下，新到达的Term，怎么判断其是新的还是已经存在了。针对这个问题lucene对Term做了一层Hash，对应的类是``org.apache.lucene.util.BytesRefHash``,功能解释如下：
+&emsp;&emsp;上图中左侧除了上面讨论的外，可以看到还有lastDocID、lastPosition等，这些都是为了做差值编码，节约存储。这里还有个问题需要说明下，新到达的Term，怎么判断其是新的还是已经存在了。针对这个问题lucene对Term做了一层Hash，对应的类是``org.apache.lucene.util.BytesRefHash``,功能解释如下：
 > &emsp;&emsp;BytesRefHash is a special purpose hash-map like data-structure optimized for BytesRef instances. BytesRefHash maintains mappings of byte arrays to ids. storing the hashed bytes efficiently in continuous storage. The mapping to the id is encapsulated inside BytesRefHash and is guaranteed to be increased for each added BytesRef.
 
 &emsp;&emsp;综上所述，lucene对缓存的实现可谓煞费苦心，之所以做的这么复杂我觉得有以下几点考虑：
 - 节约内存。比如用那个三个指针记录两个缓存块的偏移、Slice长度的分配策略、差值编码等。
 - 方便对内存资源进行控制。几乎所有数据都是通过BlockPool来管理的，这样的好处是内存使用情况非常容易统计，FlushPolicy很容易获取当前的内存使用情况，从而触发刷新逻辑。
+- 缓存不必针对每个Field，也就是说同一个Segment所有Field的数据可以放在一块缓存中，每个Field有自己的PostingList，所有Field的Term字面量共享一个缓存以及上层的Hash，这样便能很大程度上节约存储空间。对应一个具体的Field，判断Term是否存在首先判断在Term缓存块中是否存在，接着判断PostingList中是否有入口。
 
 下一篇将介绍上面的逻辑倒排结果在段中是怎么表示的，也就是缓存怎么刷到外存上的。
