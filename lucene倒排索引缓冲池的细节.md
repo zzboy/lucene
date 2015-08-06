@@ -41,6 +41,7 @@
 &emsp;&emsp;lucene里面实现缓存的最基础的组件是``org.apache.lucene.util.ByteBlockPool``，lucene的缓存块都是基于这个类构建的，这个类的官方解释如下：
 
  > &emsp;&emsp;The idea is to allocate slices of increasing lengths For example, the first slice is 5 bytes, the next slice is 14, etc.  We start by writing our bytes into the first 5 bytes.  When we hit the end of the slice, we allocate the next slice and then write the address of the new slice into the last 4 bytes of the previous slice (the "forwarding address").
+ 
 > &emsp;&emsp;Each slice is filled with 0's initially, and we mark the end with a non-zero byte.  This way the methods that are writing into the slice don't need to record its length and instead allocate a new slice once they hit a non-zero byte.
 
 &emsp;&emsp;具体实现请直接参考源码，实现很简单，类的功能是可以将字节数据写入，但是不要求写入的逻辑上是一个整体的数据在物理上也是连续的，将逻辑上的数据块读出来只需要提供两个指针就好了，一个是逻辑块的物理起始位置，一个是逻辑块的物理结束位置，注意逻辑块的长度可能是小于两个结束位置之差的。ByteBlockPool要解决的问题可以联系实际的场景来体会下，不同Term的倒排信息是缓存在一个ByteBlockPool中的，不同Term的倒排信息在时序上是交叉写入的，Term到达的顺序可能是<term1,term2,term1>，并且每个Term倒排信息的多少是无法事先知道的。
