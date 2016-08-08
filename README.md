@@ -1,6 +1,7 @@
 # lucene
 - [lucene倒排索引缓冲池的细节](./lucene倒排索引缓冲池的细节.md)
 - [lucene数值区间查询原理](./lucene数值区间查询原理.md)
+- [lucene 6 数值索引以及空间索引方案](./lucene_6_bkd_tree.md)
 - lucene词典的构造原理
 - lucene模糊查询以及正则查询的原理
 - [BooleanQuery倒排表合并策略](./BooleanQuery倒排表合并策略.md)
